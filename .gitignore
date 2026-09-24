@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Env / secrets
+.env
+
+# Node / frontend
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+frontend/.vercel/
+frontend/.wrangler/
+
+# OS
+.DS_Store
+
+# Ollama local cache (not committed; pulled fresh in CI, cached via actions/cache)
+.ollama/
