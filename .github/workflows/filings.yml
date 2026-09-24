@@ -1,0 +1,49 @@
+name: Filing check
+
+on:
+  schedule:
+    - cron: "15 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-writes
+  cancel-in-progress: false
+
+env:
+  EDGAR_USER_AGENT: ${{ secrets.EDGAR_USER_AGENT }}
+  OLLAMA_MODEL: llama3.2:3b
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      # Cheap check first: only start Ollama if a new 10-K/10-Q landed.
+      - name: Detect new filings
+        id: detect
+        run: python -m screener.check_filings --detect
+
+      - name: Set up Ollama
+        if: steps.detect.outputs.needs_llm == 'true'
+        uses: ./.github/actions/setup-ollama
+        with:
+          model: ${{ env.OLLAMA_MODEL }}
+
+      - name: Process new filings
+        run: python -m screener.check_filings
+
+      # Runs even if processing failed: the watcher saves companies it fully
+      # processed before the failure, and the job still shows red.
+      - name: Commit data
+        if: ${{ !cancelled() }}
+        run: bash .github/scripts/commit-data.sh "Update filings data"

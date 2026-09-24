@@ -1,0 +1,32 @@
+name: Daily prices
+
+on:
+  schedule:
+    # Weekdays 22:30 UTC: after the 16:00 ET close in both EDT and EST, with
+    # a buffer for the free data sources to publish the day's bar.
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Shared with the filing and backfill workflows so data commits never race.
+concurrency:
+  group: data-writes
+  cancel-in-progress: false
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Fetch prices
+        run: python -m screener.fetch_prices
+      - name: Commit data
+        run: bash .github/scripts/commit-data.sh "Update daily prices"

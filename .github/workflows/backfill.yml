@@ -1,0 +1,82 @@
+name: Backfill
+
+# One-off (re-runnable) seeding of the dataset. The slow part, analyzing each
+# company's last 8 filings with a local model, runs as one parallel job per
+# company to stay well within the 6-hour job limit; a final job merges the
+# results, refreshes fundamentals and prices, and commits once.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  EDGAR_USER_AGENT: ${{ secrets.EDGAR_USER_AGENT }}
+  OLLAMA_MODEL: llama3.2:3b
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      tickers: ${{ steps.universe.outputs.tickers }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: universe
+        run: |
+          echo "tickers=$(python3 -c 'import json; from screener.universe import tickers; print(json.dumps(tickers()))')" >> "$GITHUB_OUTPUT"
+
+  qualitative:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        ticker: ${{ fromJSON(needs.plan.outputs.tickers) }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: ./.github/actions/setup-ollama
+        with:
+          model: ${{ env.OLLAMA_MODEL }}
+      - name: Analyze last 8 filings
+        run: python -m screener.backfill qualitative ${{ matrix.ticker }} --out partials/${{ matrix.ticker }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: partial-${{ matrix.ticker }}
+          path: partials/
+          retention-days: 7
+
+  merge:
+    needs: qualitative
+    # Merge whatever finished; companies whose job failed stay "qualitative pending".
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: data-writes
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: partial-*
+          merge-multiple: true
+          path: partials/
+      - name: Merge, refresh fundamentals, rescore
+        run: |
+          shopt -s nullglob
+          python -m screener.backfill merge partials/*.json
+      - name: Fetch prices
+        run: python -m screener.fetch_prices
+      - name: Commit data
+        run: bash .github/scripts/commit-data.sh "Backfill dataset"

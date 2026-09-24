@@ -1,0 +1,32 @@
+name: Set up Ollama
+description: Install Ollama, restore the cached model, start the server, and pull the model.
+inputs:
+  model:
+    description: Ollama model tag (keep it small, 1-3B class, for CPU-only runners)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Restore cached model
+      uses: actions/cache@v4
+      with:
+        path: ~/.ollama/models
+        key: ollama-model-${{ inputs.model }}
+
+    - name: Install and start Ollama
+      shell: bash
+      env:
+        MODEL: ${{ inputs.model }}
+      run: |
+        curl -fsSL https://ollama.com/install.sh | sh
+        # The installer starts a systemd service with its own model directory.
+        # Run the server as this user instead so ~/.ollama/models is the cached path.
+        sudo systemctl stop ollama || true
+        mkdir -p ~/.ollama/models
+        OLLAMA_MODELS="$HOME/.ollama/models" nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+        for _ in $(seq 1 60); do
+          curl -sf http://localhost:11434/api/tags > /dev/null && break
+          sleep 1
+        done
+        curl -sf http://localhost:11434/api/tags > /dev/null || { cat "$RUNNER_TEMP/ollama.log"; exit 1; }
+        ollama pull "$MODEL"
