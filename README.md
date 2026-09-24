@@ -80,20 +80,52 @@ frontend/                 # static dashboard, reads data/*.json
 SEC EDGAR requires a `User-Agent` header identifying a real contact — set
 `EDGAR_USER_AGENT` (see `.env.example`).
 
+## Setup (one time)
+
+1. **Keep the repo public.** Public repos get unlimited GitHub Actions minutes
+   on standard runners; private repos are capped at 2,000/month.
+2. **Add the SEC contact secret.** Settings → Secrets and variables →
+   Actions → New repository secret: `EDGAR_USER_AGENT` = `Your Name you@example.com`.
+3. **Workflow permissions.** The workflows declare `contents: write`
+   themselves; if your account or org restricts `GITHUB_TOKEN` to read-only,
+   allow read/write under Settings → Actions → General → Workflow permissions.
+4. **Seed the data.** Actions → Backfill → Run workflow. It analyzes each
+   company's last 8 10-K/10-Q filings in parallel (one job per company,
+   roughly 30–45 minutes), then commits fundamentals, scores and prices.
+   Alternatively run it locally with Ollama: `python -m screener.backfill all`.
+5. **Deploy the site on Cloudflare Pages.** Workers & Pages → Create →
+   Pages → connect this repo. Framework preset: None. Build command:
+   `bash frontend/build.sh`. Build output directory: `frontend`. Every data
+   commit from the scheduled jobs then redeploys automatically.
+
+Scheduled workflows only run from the default branch. GitHub also pauses
+schedules in public repos after 60 days without repository activity. The
+daily price commits count as activity, but if the site ever looks stale,
+check the Actions tab.
+
 ## Local development
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # fill in EDGAR_USER_AGENT
+export EDGAR_USER_AGENT="Your Name you@example.com"
 
-python -m screener.fetch_prices
-python -m screener.fetch_fundamentals
+python -m pytest                       # unit tests, no network needed
+python -m screener.fetch_prices        # writes data/prices.json
+python -m screener.fetch_fundamentals  # writes data/companies.json
+python -m screener.analyze_filing NVDA # needs `ollama serve` + `ollama pull llama3.2:3b`
 python -m screener.check_filings
-python -m pytest tests/
+
+bash frontend/build.sh && python -m http.server -d frontend 8000  # dashboard at localhost:8000
 ```
 
-## Status
+## Known limitations
 
-Under active build. See the build spec doc for the full deliverables list
-and open decisions.
+- The qualitative signal comes from a small (3B) model reading a selection
+  of the MD&A, not the whole section, so treat tone as a coarse signal. Red
+  flags are only kept when the model's quote appears verbatim in the filing.
+- MD&A section detection is heuristic. If it can't find the section, the
+  filing is marked `extraction_failed`, the run shows a warning, and the
+  score falls back to fundamentals for that filing.
+- 8-K filings are shown as events but don't change the score (they carry no
+  XBRL financials or MD&A).

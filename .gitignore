@@ -9,7 +9,8 @@ venv/
 # Env / secrets
 .env
 
-# Node / frontend
+# Node / frontend (frontend/data is copied in at build time by frontend/build.sh)
+frontend/data/
 frontend/node_modules/
 frontend/.next/
 frontend/dist/
