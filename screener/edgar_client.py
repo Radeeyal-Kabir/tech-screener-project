@@ -122,5 +122,33 @@ def get_submissions(cik10: str) -> dict:
     return get_json(_SUBMISSIONS_URL.format(cik10=cik10))
 
 
+def recent_filings(submissions: dict, forms: tuple[str, ...]) -> list[dict]:
+    """Flatten the submissions feed's parallel arrays, newest first."""
+    recent = submissions.get("filings", {}).get("recent", {})
+    keys = ("accessionNumber", "form", "filingDate", "reportDate", "primaryDocument")
+    rows = [dict(zip(keys, vals)) for vals in zip(*(recent.get(k, []) for k in keys))]
+    out = [
+        {
+            "accession": r["accessionNumber"],
+            "form": r["form"],
+            "filed": r["filingDate"],
+            "period_end": r["reportDate"] or None,
+            "primary_document": r["primaryDocument"],
+        }
+        for r in rows
+        if r["form"] in forms
+    ]
+    return sorted(out, key=lambda r: (r["filed"], r["accession"]), reverse=True)
+
+
+def archive_url(cik10: str, accession: str, filename: str = "") -> str:
+    return f"https://www.sec.gov/Archives/edgar/data/{int(cik10)}/{accession.replace('-', '')}/{filename}"
+
+
+def filing_documents(cik10: str, accession: str) -> list[str]:
+    index = get_json(archive_url(cik10, accession, "index.json"))
+    return [item["name"] for item in index.get("directory", {}).get("item", [])]
+
+
 def get_companyfacts(cik10: str) -> dict:
     return get_json(_COMPANYFACTS_URL.format(cik10=cik10))
