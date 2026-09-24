@@ -126,6 +126,7 @@ def recent_filings(submissions: dict, forms: tuple[str, ...]) -> list[dict]:
     """Flatten the submissions feed's parallel arrays, newest first."""
     recent = submissions.get("filings", {}).get("recent", {})
     keys = ("accessionNumber", "form", "filingDate", "reportDate", "primaryDocument")
+    items = recent.get("items") or []
     rows = [dict(zip(keys, vals)) for vals in zip(*(recent.get(k, []) for k in keys))]
     out = [
         {
@@ -134,8 +135,9 @@ def recent_filings(submissions: dict, forms: tuple[str, ...]) -> list[dict]:
             "filed": r["filingDate"],
             "period_end": r["reportDate"] or None,
             "primary_document": r["primaryDocument"],
+            "items": items[i] if i < len(items) else "",
         }
-        for r in rows
+        for i, r in enumerate(rows)
         if r["form"] in forms
     ]
     return sorted(out, key=lambda r: (r["filed"], r["accession"]), reverse=True)
