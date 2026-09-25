@@ -105,19 +105,8 @@ check the Actions tab.
 
 ## Local development
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-export EDGAR_USER_AGENT="Your Name you@example.com"
-
-python -m pytest                       # unit tests, no network needed
-python -m screener.fetch_prices        # writes data/prices.json
-python -m screener.fetch_fundamentals  # writes data/companies.json
-python -m screener.analyze_filing NVDA # needs `ollama serve` + `ollama pull llama3.2:3b`
-python -m screener.check_filings
-
-bash frontend/build.sh && python -m http.server -d frontend 8000  # dashboard at localhost:8000
-```
+See [`LOCAL_DEV.md`](LOCAL_DEV.md) for full setup (venv, Ollama) and the
+commands to run each pipeline step, the dashboard, and the tests locally.
 
 ## Known limitations
 
