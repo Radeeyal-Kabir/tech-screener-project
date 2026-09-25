@@ -4,6 +4,8 @@ name: Backfill
 # company's last 8 filings with a local model, runs as one parallel job per
 # company to stay well within the 6-hour job limit; a final job merges the
 # results, refreshes fundamentals and prices, and commits once.
+# Run it from Actions → Backfill → Run workflow; it needs the EDGAR_USER_AGENT
+# repository secret (Settings → Secrets and variables → Actions → Secrets).
 on:
   workflow_dispatch:
 
