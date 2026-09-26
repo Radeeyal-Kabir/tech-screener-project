@@ -23,6 +23,16 @@ anchor points below, clamped at the ends. Missing inputs score a neutral 50 and
 are listed in the output, so a gap never silently helps or hurts a company.
 If no filing has been analyzed yet, the composite is the quant score alone.
 
+Negative stockholders' equity makes debt/equity undefined, not merely
+unavailable, so leverage is excluded from the quant score entirely rather than
+defaulted to neutral, and the remaining quant inputs are reweighted
+proportionally so they still sum to the full quant weight.
+
+The composite combines the RAW (unrounded) quant and qualitative totals and
+rounds once, at the end — never round each sub-score first and then combine,
+which can shift a company across a band threshold that the underlying data
+doesn't actually cross.
+
 Bands: composite >= 65 -> Buy, < 40 -> Avoid, otherwise Hold.
 """
 
@@ -85,9 +95,24 @@ def _level_trend(level: float, trend: float) -> float:
     return LEVEL_VS_TREND[0] * level + LEVEL_VS_TREND[1] * trend
 
 
+def _reweighted(parts: dict[str, float]) -> dict[str, float]:
+    """QUANT_WEIGHTS restricted to the parts actually present, rescaled so they
+    still sum to the full quant weight (1.0) — used when a part is excluded
+    outright (not merely defaulted to neutral)."""
+    active = {k: QUANT_WEIGHTS[k] for k in parts}
+    scale = sum(QUANT_WEIGHTS.values()) / sum(active.values())
+    return {k: w * scale for k, w in active.items()}
+
+
 def quant_score(fundamentals: dict) -> dict:
     latest, trend = fundamentals["latest"], fundamentals["trend"]
     missing: list[str] = []
+    quarters = fundamentals.get("quarters") or []
+    # Negative equity makes debt/equity undefined, not merely unavailable — a
+    # neutral default would silently fabricate a number. Exclude it and
+    # reweight the remaining inputs instead, rather than default it.
+    negative_equity = bool(quarters and quarters[-1].get("negative_equity"))
+
     parts = {
         "revenue_growth": _level_trend(
             _metric(latest["revenue_yoy"], "revenue_yoy", missing),
@@ -97,14 +122,23 @@ def quant_score(fundamentals: dict) -> dict:
             _metric(latest["net_margin"], "net_margin", missing),
             _metric(trend["net_margin_change_yoy"], "net_margin_change_yoy", missing),
         ),
-        "leverage": _level_trend(
-            _metric(latest["debt_to_equity"], "debt_to_equity", missing),
-            _metric(trend["debt_to_equity_change_yoy"], "debt_to_equity_change_yoy", missing),
-        ),
         "liquidity": _metric(latest["current_ratio"], "current_ratio", missing),
     }
-    total = sum(QUANT_WEIGHTS[k] * v for k, v in parts.items())
-    return {"score": round(total, 1), "parts": {k: round(v, 1) for k, v in parts.items()}, "missing": missing}
+    if not negative_equity:
+        parts["leverage"] = _level_trend(
+            _metric(latest["debt_to_equity"], "debt_to_equity", missing),
+            _metric(trend["debt_to_equity_change_yoy"], "debt_to_equity_change_yoy", missing),
+        )
+
+    weights = _reweighted(parts)
+    total = sum(weights[k] * v for k, v in parts.items())
+    return {
+        "score": round(total, 1),
+        "raw": total,
+        "parts": {k: round(v, 1) for k, v in parts.items()},
+        "missing": missing,
+        "negative_equity": negative_equity,
+    }
 
 
 def _consecutive_bearish(filings: list[dict]) -> int:
@@ -153,6 +187,7 @@ def qualitative_score(filings: list[dict]) -> dict | None:
     total = QUAL_WEIGHTS["tone"] * tone + QUAL_WEIGHTS["red_flags"] * red_flags
     return {
         "score": round(total, 1),
+        "raw": total,
         "parts": {"tone": round(tone, 1), "red_flags": round(red_flags, 1)},
         "tone": latest["tone"],
         "tone_shift": tone_shift,
@@ -192,7 +227,8 @@ def rationale(rating: str, fundamentals: dict, quant: dict, qual: dict | None) -
     elif latest["net_margin"] is not None:
         add(interp(latest["net_margin"], ANCHORS["net_margin"]) - NEUTRAL,
             f"{latest['net_margin']:.0%} net margin", f"thin {latest['net_margin']:.0%} net margin")
-    add(quant["parts"]["leverage"] - NEUTRAL, "low leverage", "leverage elevated")
+    if "leverage" in quant["parts"]:
+        add(quant["parts"]["leverage"] - NEUTRAL, "low leverage", "leverage elevated")
     add(quant["parts"]["liquidity"] - NEUTRAL, "strong liquidity", "tight liquidity")
 
     if qual is not None:
@@ -233,10 +269,13 @@ def score_company(record: dict) -> dict | None:
         return None
     quant = quant_score(fundamentals)
     qual = qualitative_score(record.get("qualitative", {}).get("filings", []))
+    # Combine the RAW (unrounded) sub-totals and round once, at the end — rounding each
+    # sub-score to 1 decimal first and then combining would round twice, which can shift
+    # a company across a band threshold that the underlying data doesn't actually cross.
     if qual is None:
-        composite = quant["score"]
+        composite = quant["raw"]
     else:
-        composite = WEIGHTS["quant"] * quant["score"] + WEIGHTS["qualitative"] * qual["score"]
+        composite = WEIGHTS["quant"] * quant["raw"] + WEIGHTS["qualitative"] * qual["raw"]
     composite = round(composite, 1)
     rating = band(composite)
     text = rationale(rating, fundamentals, quant, qual)

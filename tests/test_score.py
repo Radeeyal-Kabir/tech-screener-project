@@ -102,6 +102,58 @@ def test_missing_metric_is_neutral_and_reported():
     result = score.quant_score(_fundamentals(de=None, de_chg=None))
     assert result["parts"]["leverage"] == score.NEUTRAL
     assert "debt_to_equity" in result["missing"]
+    assert result["negative_equity"] is False
+
+
+def test_composite_rounds_once_from_raw_subscores_not_twice(monkeypatch):
+    # IBM's real 2026-06-30 quarter (from a committed backfill): quant_score's raw (pre-round)
+    # total is 40.950510, which itself rounds to 41.0; qualitative_score's raw total is exactly
+    # 37.5. Combining the already-rounded sub-scores (0.70*41.0 + 0.30*37.5 = 39.95) rounds a
+    # SECOND time to 40.0, landing on the Hold side of the Hold/Avoid line. Combining the raw
+    # totals directly (0.70*40.950510 + 0.30*37.5 = 39.915357) rounds once to 39.9 -- Avoid.
+    # This asserts the correct (single-rounding) result, not the double-rounded artifact.
+    monkeypatch.setattr(score, "quant_score", lambda f: {
+        "score": 41.0, "raw": 40.950510,
+        "parts": {"revenue_growth": 30.2, "net_margin": 52.8, "leverage": 55.2, "liquidity": 23.3},
+        "missing": [], "negative_equity": False,
+    })
+    monkeypatch.setattr(score, "qualitative_score", lambda filings: {
+        "score": 37.5, "raw": 37.5, "parts": {"tone": 35.0, "red_flags": 40.0},
+        "tone": "neutral", "tone_shift": -1, "consecutive_bearish": 0, "flags": [],
+    })
+    rec = {"fundamentals": _fundamentals(yoy=0.011, margin=0.126, de=1.80, cr=0.79),
+           "qualitative": {"filings": [_filing("neutral")]}}
+    result = score.score_company(rec)
+    assert result["composite"] == 39.9
+    assert result["rating"] == "Avoid"
+
+
+def test_negative_equity_excludes_leverage_and_reweights_others():
+    # SYNTHETIC case -- as of the last backfill, no company in the real dataset actually has
+    # negative equity (PANW's None debt/equity is a separate, unrelated data-alignment bug in
+    # fetch_fundamentals.py, not this code path). This only exercises quant_score()'s handling
+    # of a company that DOES have negative equity, whenever one appears.
+    fundamentals = _fundamentals(yoy=0.20, margin=0.10, cr=1.2)
+    fundamentals["latest"]["debt_to_equity"] = None
+    fundamentals["trend"]["debt_to_equity_change_yoy"] = None
+    fundamentals["quarters"] = [{"end": "2026-06-30", "negative_equity": True}]
+
+    result = score.quant_score(fundamentals)
+    assert result["negative_equity"] is True
+    assert "leverage" not in result["parts"]
+    assert "debt_to_equity" not in result["missing"]  # excluded, not neutral-defaulted
+
+    rev_part = score._level_trend(score.interp(0.20, score.ANCHORS["revenue_yoy"]), score.NEUTRAL)
+    margin_part = score._level_trend(score.interp(0.10, score.ANCHORS["net_margin"]), score.NEUTRAL)
+    liq_part = score.interp(1.2, score.ANCHORS["current_ratio"])
+    # 0.35 + 0.30 + 0.15 = 0.80 of the original weight remains; rescaled by 1/0.80 = 1.25.
+    expected_raw = 1.25 * (0.35 * rev_part + 0.30 * margin_part + 0.15 * liq_part)
+    assert result["raw"] == pytest.approx(expected_raw)
+
+    # score_company() must not crash building the rationale with "leverage" absent from parts.
+    rec = {"fundamentals": fundamentals, "qualitative": {"filings": [_filing("neutral")]}}
+    result = score.score_company(rec)
+    assert "leverage" not in result["rationale"] and "elevated" not in result["rationale"]
 
 
 def test_momentum_is_not_an_input():

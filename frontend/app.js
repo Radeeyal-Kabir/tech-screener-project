@@ -238,7 +238,13 @@ function card(c, p) {
 
   if (s) {
     const qp = s.quant.parts;
-    const lines = [`Quant ${s.quant.score.toFixed(0)} × 70%: growth ${qp.revenue_growth.toFixed(0)}, margin ${qp.net_margin.toFixed(0)}, leverage ${qp.leverage.toFixed(0)}, liquidity ${qp.liquidity.toFixed(0)}`];
+    const quantBits = [`growth ${qp.revenue_growth.toFixed(0)}`, `margin ${qp.net_margin.toFixed(0)}`];
+    if ("leverage" in qp) quantBits.push(`leverage ${qp.leverage.toFixed(0)}`);
+    quantBits.push(`liquidity ${qp.liquidity.toFixed(0)}`);
+    const lines = [`Quant ${s.quant.score.toFixed(0)} × 70%: ${quantBits.join(", ")}`];
+    if (s.quant.negative_equity) {
+      lines.push("Debt/equity excluded (negative equity, so the ratio is undefined); the other three quant inputs are reweighted to fill its share.");
+    }
     if (s.qualitative) {
       lines.push(`Qualitative ${s.qualitative.score.toFixed(0)} × 30%: tone ${s.qualitative.parts.tone.toFixed(0)}, red flags ${s.qualitative.parts.red_flags.toFixed(0)}`);
     } else {
@@ -289,7 +295,10 @@ function card(c, p) {
     f ? el("dl", { class: "metrics" },
       metric("Revenue YoY", pct(f.latest.revenue_yoy, 1, true), growthTrend),
       metric("Net margin", pct(f.latest.net_margin, 1), pts(f.trend.net_margin_change_yoy) && `${pts(f.trend.net_margin_change_yoy)} YoY`),
-      metric("Debt/equity", num(f.latest.debt_to_equity), f.trend.debt_to_equity_change_yoy === null ? null : `${f.trend.debt_to_equity_change_yoy > 0 ? "+" : ""}${num(f.trend.debt_to_equity_change_yoy)} YoY`),
+      metric("Debt/equity",
+        s?.quant?.negative_equity ? "N/A (negative equity)" : num(f.latest.debt_to_equity),
+        s?.quant?.negative_equity ? "excluded from quant score"
+          : (f.trend.debt_to_equity_change_yoy === null ? null : `${f.trend.debt_to_equity_change_yoy > 0 ? "+" : ""}${num(f.trend.debt_to_equity_change_yoy)} YoY`)),
       metric("Current ratio", num(f.latest.current_ratio))) : null,
     p ? el("div", { class: "momentum" },
       el("strong", { text: "Momentum " }), el("span", { class: "note", text: "(shown separately, not in the score): " }),
