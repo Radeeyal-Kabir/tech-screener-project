@@ -1,0 +1,65 @@
+name: Diagnose fundamentals
+
+# One-off/reusable debugging tool: dumps a single company's raw XBRL facts for
+# the metrics fetch_fundamentals.py derives ratios from (equity, current
+# assets/liabilities, debt), so a silent gap like "debt/equity always None for
+# this filer" can be diagnosed against real data instead of guessed at blind.
+# No Ollama, no data/ writes — read-only, and fast.
+on:
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: Ticker to dump raw XBRL facts for
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  EDGAR_USER_AGENT: ${{ secrets.EDGAR_USER_AGENT }}
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Fetch and dump equity-relevant facts
+        env:
+          TICKER: ${{ inputs.ticker }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          from screener import edgar_client
+
+          ticker = os.environ["TICKER"].upper()
+          cik = edgar_client.resolve_ciks([ticker])[ticker]
+          facts = edgar_client.get_companyfacts(cik)
+          usgaap = facts.get("facts", {}).get("us-gaap", {})
+
+          concepts = [
+              "StockholdersEquity",
+              "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
+              "AssetsCurrent",
+              "LiabilitiesCurrent",
+              "LongTermDebt",
+              "LongTermDebtNoncurrent",
+              "LongTermDebtCurrent",
+          ]
+          out = {c: usgaap[c] for c in concepts if c in usgaap}
+          with open("diagnostic.json", "w") as f:
+              json.dump({"ticker": ticker, "cik": cik, "facts": out}, f, indent=2)
+          print(f"Concepts found for {ticker}: {list(out)}")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fundamentals-diagnostic-${{ inputs.ticker }}
+          path: diagnostic.json
+          retention-days: 30
