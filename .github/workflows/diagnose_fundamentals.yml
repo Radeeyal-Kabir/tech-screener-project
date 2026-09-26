@@ -1,9 +1,13 @@
 name: Diagnose fundamentals
 
-# One-off/reusable debugging tool: dumps a single company's raw XBRL facts for
-# the metrics fetch_fundamentals.py derives ratios from (equity, current
-# assets/liabilities, debt), so a silent gap like "debt/equity always None for
-# this filer" can be diagnosed against real data instead of guessed at blind.
+# One-off/reusable debugging tool: runs the real fetch_fundamentals.py lookup
+# functions against a single company's live XBRL facts and prints what _at()
+# actually found (or didn't) for each target quarter-end, plus a trimmed slice
+# of the raw facts behind it — so a silent gap like "debt/equity always None
+# for this filer" can be diagnosed against real data instead of guessed at
+# blind. Printed to the job log directly (not an artifact — some callers'
+# network policy blocks the blob-storage host artifact downloads redirect
+# to, even though the GitHub API itself is reachable).
 # No Ollama, no data/ writes — read-only, and fast.
 on:
   workflow_dispatch:
@@ -29,7 +33,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Fetch and dump equity-relevant facts
+      - name: Diagnose the equity lookup using the real pipeline functions
         env:
           TICKER: ${{ inputs.ticker }}
         run: |
@@ -38,34 +42,38 @@ jobs:
           import os
 
           from screener import edgar_client
+          from screener.fetch_fundamentals import _at, _pick_series, _usd_facts
 
           ticker = os.environ["TICKER"].upper()
           cik = edgar_client.resolve_ciks([ticker])[ticker]
           facts = edgar_client.get_companyfacts(cik)
-          usgaap = facts.get("facts", {}).get("us-gaap", {})
 
-          concepts = [
-              "StockholdersEquity",
-              "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
-              "AssetsCurrent",
-              "LiabilitiesCurrent",
-              "LongTermDebt",
-              "LongTermDebtNoncurrent",
-              "LongTermDebtCurrent",
+          rev_series, rev_concept = _pick_series(facts, "revenue", flow=True)
+          quarter_ends = sorted(rev_series)[-8:]
+          print(f"revenue concept: {rev_concept}")
+          print("Quarter-end dates compute_fundamentals() targets (last 8):",
+                [d.isoformat() for d in quarter_ends])
+
+          equity_series, equity_concept = _pick_series(facts, "equity", flow=False)
+          print(f"\nequity concept picked: {equity_concept}, {len(equity_series)} instant data points total")
+
+          print("\n_at() lookup for each target quarter-end (default tolerance=7 days):")
+          for target in quarter_ends:
+              val = _at(equity_series, target)
+              nearest = min(equity_series, key=lambda d: abs((d - target).days), default=None)
+              gap = abs((nearest - target).days) if nearest else None
+              print(f"  target={target.isoformat()}  _at_result={val}  "
+                    f"nearest_available={nearest.isoformat() if nearest else None}  gap_days={gap}")
+
+          # A small, trimmed slice of the RAW facts behind the equity concept (just the
+          # entries overlapping the 8 target quarters +/- 30 days) -- for a repo test fixture.
+          lo, hi = min(quarter_ends), max(quarter_ends)
+          raw = _usd_facts(facts, equity_concept) if equity_concept else []
+          from datetime import date, timedelta
+          trimmed = [
+              r for r in raw
+              if lo - timedelta(days=30) <= date.fromisoformat(r["end"]) <= hi + timedelta(days=30)
           ]
-          out = {c: usgaap[c] for c in concepts if c in usgaap}
-          payload = {"ticker": ticker, "cik": cik, "facts": out}
-          with open("diagnostic.json", "w") as f:
-              json.dump(payload, f, indent=2)
-          print(f"Concepts found for {ticker}: {list(out)}")
-          # Artifact downloads go through blob storage some callers can't reach;
-          # also print it so it's readable straight from the job log.
-          print("::group::diagnostic.json")
-          print(json.dumps(payload, indent=2))
-          print("::endgroup::")
+          print(f"\nequity_concept={equity_concept!r}; trimmed raw facts ({len(trimmed)} of {len(raw)} total):")
+          print(json.dumps(trimmed, indent=2, sort_keys=True))
           PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: fundamentals-diagnostic-${{ inputs.ticker }}
-          path: diagnostic.json
-          retention-days: 30
