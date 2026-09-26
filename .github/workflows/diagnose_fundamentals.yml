@@ -54,26 +54,29 @@ jobs:
           print("Quarter-end dates compute_fundamentals() targets (last 8):",
                 [d.isoformat() for d in quarter_ends])
 
-          equity_series, equity_concept = _pick_series(facts, "equity", flow=False)
-          print(f"\nequity concept picked: {equity_concept}, {len(equity_series)} instant data points total")
-
-          print("\n_at() lookup for each target quarter-end (default tolerance=7 days):")
-          for target in quarter_ends:
-              val = _at(equity_series, target)
-              nearest = min(equity_series, key=lambda d: abs((d - target).days), default=None)
-              gap = abs((nearest - target).days) if nearest else None
-              print(f"  target={target.isoformat()}  _at_result={val}  "
-                    f"nearest_available={nearest.isoformat() if nearest else None}  gap_days={gap}")
-
-          # A small, trimmed slice of the RAW facts behind the equity concept (just the
-          # entries overlapping the 8 target quarters +/- 30 days) -- for a repo test fixture.
-          lo, hi = min(quarter_ends), max(quarter_ends)
-          raw = _usd_facts(facts, equity_concept) if equity_concept else []
           from datetime import date, timedelta
-          trimmed = [
-              r for r in raw
-              if lo - timedelta(days=30) <= date.fromisoformat(r["end"]) <= hi + timedelta(days=30)
-          ]
-          print(f"\nequity_concept={equity_concept!r}; trimmed raw facts ({len(trimmed)} of {len(raw)} total):")
-          print(json.dumps(trimmed, indent=2, sort_keys=True))
+          lo, hi = min(quarter_ends), max(quarter_ends)
+
+          def report(name):
+              series, concept = _pick_series(facts, name, flow=False)
+              print(f"\n{name} concept picked: {concept}, {len(series)} instant data points total")
+              for target in quarter_ends:
+                  val = _at(series, target)
+                  nearest = min(series, key=lambda d: abs((d - target).days), default=None)
+                  gap = abs((nearest - target).days) if nearest else None
+                  print(f"  target={target.isoformat()}  _at_result={val}  "
+                        f"nearest_available={nearest.isoformat() if nearest else None}  gap_days={gap}")
+              raw = _usd_facts(facts, concept) if concept else []
+              trimmed = [
+                  r for r in raw
+                  if lo - timedelta(days=30) <= date.fromisoformat(r["end"]) <= hi + timedelta(days=30)
+              ]
+              print(f"{name}: trimmed raw facts ({len(trimmed)} of {len(raw)} total), concept={concept!r}:")
+              print(json.dumps(trimmed, indent=2, sort_keys=True))
+              return concept
+
+          report("equity")
+          report("debt_total")
+          report("debt_noncurrent")
+          report("debt_current")
           PY
