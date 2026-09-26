@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-09-26T07:35:59+00:00",
+  "as_of": "2026-09-26T08:22:12+00:00",
   "companies": [
     {
       "ticker": "NVDA",
@@ -502,16 +502,19 @@
         "rationale": "Buy \u2014 strong liquidity.",
         "quant": {
           "score": 95.8,
+          "raw": 95.81687999999998,
           "parts": {
             "revenue_growth": 100.0,
             "net_margin": 100.0,
-            "leverage": 79.1,
-            "liquidity": 100.0
+            "liquidity": 100.0,
+            "leverage": 79.1
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 72.5,
+          "raw": 72.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 70.0
@@ -538,7 +541,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -1039,16 +1042,19 @@
         "rationale": "Buy \u2014 strong liquidity, though liquidity debt flagged 8 filings running.",
         "quant": {
           "score": 95.5,
+          "raw": 95.51159999999999,
           "parts": {
             "revenue_growth": 100.0,
             "net_margin": 100.0,
-            "leverage": 77.6,
-            "liquidity": 100.0
+            "liquidity": 100.0,
+            "leverage": 77.6
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 37.5,
+          "raw": 37.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 0.0
@@ -1079,7 +1085,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -1622,21 +1628,24 @@
         }
       ],
       "score": {
-        "composite": 80.3,
+        "composite": 80.4,
         "rating": "Buy",
         "rationale": "Buy \u2014 strong liquidity, though demand weakness flagged 8 filings running.",
         "quant": {
           "score": 90.1,
+          "raw": 90.14529999999998,
           "parts": {
             "revenue_growth": 99.2,
             "net_margin": 78.9,
-            "leverage": 83.8,
-            "liquidity": 100.0
+            "liquidity": 100.0,
+            "leverage": 83.8
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 57.5,
+          "raw": 57.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 40.0
@@ -1659,7 +1668,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -2135,16 +2144,19 @@
         "rationale": "Hold \u2014 strong liquidity but margin shrinking.",
         "quant": {
           "score": 46.9,
+          "raw": 46.86338999999999,
           "parts": {
             "revenue_growth": 12.5,
             "net_margin": 49.2,
-            "leverage": 74.5,
-            "liquidity": 85.5
+            "liquidity": 85.5,
+            "leverage": 74.5
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 35.0,
+          "raw": 35.0,
           "parts": {
             "tone": 10.0,
             "red_flags": 60.0
@@ -2167,7 +2179,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -2644,16 +2656,19 @@
         "rationale": "Buy \u2014 strong liquidity, though guidance cut flagged 4 filings running.",
         "quant": {
           "score": 88.9,
+          "raw": 88.91639333333332,
           "parts": {
             "revenue_growth": 91.1,
             "net_margin": 96.5,
-            "leverage": 65.4,
-            "liquidity": 100.0
+            "liquidity": 100.0,
+            "leverage": 65.4
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 47.5,
+          "raw": 47.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 20.0
@@ -2680,7 +2695,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -3157,21 +3172,24 @@
         }
       ],
       "score": {
-        "composite": 76.2,
+        "composite": 76.3,
         "rating": "Buy",
         "rationale": "Buy \u2014 revenue up 25% YoY, though demand weakness flagged 3 filings running.",
         "quant": {
           "score": 90.7,
+          "raw": 90.74823333333332,
           "parts": {
             "revenue_growth": 99.7,
             "net_margin": 84.1,
-            "leverage": 79.9,
-            "liquidity": 97.7
+            "liquidity": 97.7,
+            "leverage": 79.9
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 42.5,
+          "raw": 42.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 10.0
@@ -3202,7 +3220,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -3659,16 +3677,19 @@
         "rationale": "Buy \u2014 strong liquidity.",
         "quant": {
           "score": 86.2,
+          "raw": 86.23299999999998,
           "parts": {
             "revenue_growth": 87.5,
             "net_margin": 81.1,
-            "leverage": 81.3,
-            "liquidity": 100.0
+            "liquidity": 100.0,
+            "leverage": 81.3
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 82.5,
+          "raw": 82.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 90.0
@@ -3687,7 +3708,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -4160,16 +4181,19 @@
         "rationale": "Buy \u2014 strong liquidity, though demand weakness flagged 3 filings running.",
         "quant": {
           "score": 97.8,
+          "raw": 97.81111999999999,
           "parts": {
             "revenue_growth": 100.0,
             "net_margin": 100.0,
-            "leverage": 89.1,
-            "liquidity": 100.0
+            "liquidity": 100.0,
+            "leverage": 89.1
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 62.5,
+          "raw": 62.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 50.0
@@ -4192,7 +4216,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -4695,21 +4719,24 @@
         }
       ],
       "score": {
-        "composite": 75.5,
+        "composite": 75.4,
         "rating": "Buy",
         "rationale": "Buy \u2014 margin improving, though restructuring layoffs flagged 2 filings running.",
         "quant": {
           "score": 78.9,
+          "raw": 78.8565733333333,
           "parts": {
             "revenue_growth": 71.3,
             "net_margin": 97.1,
-            "leverage": 83.5,
-            "liquidity": 53.8
+            "liquidity": 53.8,
+            "leverage": 83.5
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 67.5,
+          "raw": 67.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 60.0
@@ -4736,7 +4763,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -5255,19 +5282,22 @@
         "rationale": "Buy \u2014 margin improving, though guidance cut flagged 4 filings running.",
         "quant": {
           "score": 77.7,
+          "raw": 77.65889999999999,
           "parts": {
             "revenue_growth": 98.5,
             "net_margin": 85.5,
-            "leverage": 50.0,
-            "liquidity": 50.2
+            "liquidity": 50.2,
+            "leverage": 50.0
           },
           "missing": [
             "debt_to_equity",
             "debt_to_equity_change_yoy"
-          ]
+          ],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 57.5,
+          "raw": 57.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 40.0
@@ -5294,7 +5324,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -5778,16 +5808,19 @@
         "rationale": "Hold \u2014 margin improving but tight liquidity.",
         "quant": {
           "score": 61.2,
+          "raw": 61.17612666666665,
           "parts": {
             "revenue_growth": 60.9,
             "net_margin": 91.7,
-            "leverage": 41.5,
-            "liquidity": 27.1
+            "liquidity": 27.1,
+            "leverage": 41.5
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 67.5,
+          "raw": 67.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 60.0
@@ -5818,7 +5851,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -6261,16 +6294,19 @@
         "rationale": "Buy \u2014 low leverage, though tight liquidity.",
         "quant": {
           "score": 60.9,
+          "raw": 60.93847333333331,
           "parts": {
             "revenue_growth": 64.8,
             "net_margin": 65.2,
-            "leverage": 77.3,
-            "liquidity": 21.6
+            "liquidity": 21.6,
+            "leverage": 77.3
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 82.5,
+          "raw": 82.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 90.0
@@ -6289,7 +6325,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -6767,16 +6803,19 @@
         "rationale": "Hold \u2014 low leverage but margin pressure flagged 3 filings running.",
         "quant": {
           "score": 57.3,
+          "raw": 57.287536666666654,
           "parts": {
             "revenue_growth": 57.5,
             "net_margin": 41.7,
-            "leverage": 70.7,
-            "liquidity": 70.2
+            "liquidity": 70.2,
+            "leverage": 70.7
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 72.5,
+          "raw": 72.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 70.0
@@ -6795,7 +6834,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -7273,23 +7312,26 @@
         }
       ],
       "score": {
-        "composite": 55.2,
+        "composite": 55.1,
         "rating": "Hold",
         "rationale": "Hold \u2014 revenue up 24% YoY but margin shrinking.",
         "quant": {
           "score": 56.3,
+          "raw": 56.26597999999999,
           "parts": {
             "revenue_growth": 85.6,
             "net_margin": 31.2,
-            "leverage": 72.8,
-            "liquidity": 16.0
+            "liquidity": 16.0,
+            "leverage": 72.8
           },
           "missing": [
             "debt_to_equity_change_yoy"
-          ]
+          ],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 52.5,
+          "raw": 52.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 30.0
@@ -7316,7 +7358,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -7369,7 +7411,7 @@
             "net_income": 254000000.0,
             "net_margin": 0.1002,
             "revenue_yoy": 0.1585,
-            "debt_to_equity": null,
+            "debt_to_equity": 0.0,
             "current_ratio": 0.9418,
             "negative_equity": false
           },
@@ -7399,7 +7441,7 @@
             "net_income": -177000000.0,
             "net_margin": -0.059,
             "revenue_yoy": 0.3115,
-            "debt_to_equity": null,
+            "debt_to_equity": 0.0489,
             "current_ratio": 0.8564,
             "negative_equity": false
           },
@@ -7409,7 +7451,7 @@
             "net_income": -282000000.0,
             "net_margin": -0.0827,
             "revenue_yoy": 0.3446,
-            "debt_to_equity": null,
+            "debt_to_equity": 0.0645,
             "current_ratio": 0.871,
             "negative_equity": false
           }
@@ -7418,13 +7460,13 @@
           "period_end": "2026-07-31",
           "revenue_yoy": 0.3446,
           "net_margin": -0.0827,
-          "debt_to_equity": null,
+          "debt_to_equity": 0.0645,
           "current_ratio": 0.871
         },
         "trend": {
           "revenue_yoy_slope": 0.0726,
           "net_margin_change_yoy": -0.1829,
-          "debt_to_equity_change_yoy": null
+          "debt_to_equity_change_yoy": 0.0645
         },
         "concepts_used": {
           "revenue": "RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -7433,12 +7475,12 @@
           "liabilities_current": "LiabilitiesCurrent",
           "equity": "StockholdersEquity",
           "debt_total": "LongTermDebt",
-          "debt_noncurrent": null,
-          "debt_current": null
+          "debt_noncurrent": "ConvertibleDebtNoncurrent",
+          "debt_current": "ConvertibleDebtCurrent"
         },
         "warnings": []
       },
-      "fundamentals_as_of": "2026-09-26T07:35:52+00:00",
+      "fundamentals_as_of": "2026-09-26T08:22:12+00:00",
       "qualitative": {
         "filings": [
           {
@@ -7810,24 +7852,24 @@
         }
       ],
       "score": {
-        "composite": 52.4,
+        "composite": 56.8,
         "rating": "Hold",
         "rationale": "Hold \u2014 revenue up 34% YoY but margin shrinking.",
         "quant": {
-          "score": 50.2,
+          "score": 56.4,
+          "raw": 56.43039999999999,
           "parts": {
             "revenue_growth": 100.0,
             "net_margin": 2.4,
-            "leverage": 50.0,
-            "liquidity": 29.7
+            "liquidity": 29.7,
+            "leverage": 81.3
           },
-          "missing": [
-            "debt_to_equity",
-            "debt_to_equity_change_yoy"
-          ]
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 57.5,
+          "raw": 57.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 40.0
@@ -7858,7 +7900,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -8294,16 +8336,19 @@
         "rationale": "Buy \u2014 low leverage, though tone turned neutral.",
         "quant": {
           "score": 72.6,
+          "raw": 72.60305999999999,
           "parts": {
             "revenue_growth": 76.7,
             "net_margin": 80.0,
-            "leverage": 78.6,
-            "liquidity": 40.2
+            "liquidity": 40.2,
+            "leverage": 78.6
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 57.5,
+          "raw": 57.5,
           "parts": {
             "tone": 35.0,
             "red_flags": 80.0
@@ -8326,7 +8371,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -8803,21 +8848,24 @@
         }
       ],
       "score": {
-        "composite": 72.8,
+        "composite": 72.9,
         "rating": "Buy",
         "rationale": "Buy \u2014 margin improving, though margin pressure flagged 2 filings running.",
         "quant": {
           "score": 73.0,
+          "raw": 73.04058666666666,
           "parts": {
             "revenue_growth": 80.9,
             "net_margin": 82.3,
-            "leverage": 74.4,
-            "liquidity": 34.5
+            "liquidity": 34.5,
+            "leverage": 74.4
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 72.5,
+          "raw": 72.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 70.0
@@ -8840,7 +8888,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -9306,21 +9354,24 @@
         }
       ],
       "score": {
-        "composite": 40.0,
-        "rating": "Hold",
-        "rationale": "Hold \u2014 13% net margin but demand weakness flagged 3 filings running.",
+        "composite": 39.9,
+        "rating": "Avoid",
+        "rationale": "Avoid \u2014 demand weakness flagged 3 filings running, despite 13% net margin.",
         "quant": {
           "score": 41.0,
+          "raw": 40.950509999999994,
           "parts": {
             "revenue_growth": 30.2,
             "net_margin": 52.8,
-            "leverage": 55.2,
-            "liquidity": 23.3
+            "liquidity": 23.3,
+            "leverage": 55.2
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 37.5,
+          "raw": 37.5,
           "parts": {
             "tone": 35.0,
             "red_flags": 40.0
@@ -9347,13 +9398,18 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
           "at": "2026-09-25T17:14:15+00:00",
           "rating": "Hold",
           "composite": 46.0
+        },
+        {
+          "at": "2026-09-26T08:22:12+00:00",
+          "rating": "Avoid",
+          "composite": 39.9
         }
       ]
     },
@@ -9837,16 +9893,19 @@
         "rationale": "Hold \u2014 low leverage but demand weakness flagged 8 filings running.",
         "quant": {
           "score": 57.8,
+          "raw": 57.75962999999999,
           "parts": {
             "revenue_growth": 46.9,
             "net_margin": 53.8,
-            "leverage": 80.7,
-            "liquidity": 60.4
+            "liquidity": 60.4,
+            "leverage": 80.7
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 42.5,
+          "raw": 42.5,
           "parts": {
             "tone": 75.0,
             "red_flags": 10.0
@@ -9881,7 +9940,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
@@ -10406,21 +10465,24 @@
         }
       ],
       "score": {
-        "composite": 61.9,
+        "composite": 61.8,
         "rating": "Hold",
         "rationale": "Hold \u2014 revenue up 34% YoY but guidance cut flagged 4 filings running.",
         "quant": {
           "score": 76.6,
+          "raw": 76.56969999999998,
           "parts": {
             "revenue_growth": 100.0,
             "net_margin": 68.7,
-            "leverage": 69.8,
-            "liquidity": 46.8
+            "liquidity": 46.8,
+            "leverage": 69.8
           },
-          "missing": []
+          "missing": [],
+          "negative_equity": false
         },
         "qualitative": {
           "score": 27.5,
+          "raw": 27.5,
           "parts": {
             "tone": 35.0,
             "red_flags": 20.0
@@ -10451,7 +10513,7 @@
           "quant": 0.7,
           "qualitative": 0.3
         },
-        "scored_at": "2026-09-26T07:35:59+00:00"
+        "scored_at": "2026-09-26T08:22:12+00:00"
       },
       "rating_history": [
         {
