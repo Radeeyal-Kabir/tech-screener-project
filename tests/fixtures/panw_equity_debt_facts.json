@@ -1,0 +1,56 @@
+{
+  "_source": "Real SEC EDGAR companyfacts for PANW (CIK 0001327567), fetched live via the diagnose_fundamentals.yml workflow on 2026-09-26. Trimmed to the equity and debt facts overlapping the 8 quarter-ends fetch_fundamentals.py targets, +/- 30 days. StockholdersEquity resolves cleanly for every quarter (gap_days=0 throughout) -- equity was never the bug. LongTermDebt (PANW's old debt concept) has no data at all in this window; it goes stale after 2023-07-31, which is why debt_to_equity was always None before ConvertibleDebtNoncurrent/ConvertibleDebtCurrent were added as fallback candidates. Revenue/net_income/assets_current/liabilities_current are NOT included here (synthetic filler is used for those in the test, since this fixture is only about the equity/debt lookup).",
+  "facts": {
+    "us-gaap": {
+      "StockholdersEquity": {
+        "units": {
+          "USD": [
+            {"accn": "0001327567-24-000040", "end": "2024-10-31", "filed": "2024-11-21", "form": "10-Q", "fp": "Q1", "fy": 2025, "val": 5911800000},
+            {"accn": "0001327567-25-000010", "end": "2024-10-31", "filed": "2025-02-14", "form": "10-Q", "fp": "Q2", "fy": 2025, "val": 5911800000},
+            {"accn": "0001327567-25-000035", "end": "2024-10-31", "filed": "2025-11-20", "form": "10-Q", "fp": "Q1", "fy": 2026, "val": 5912000000},
+            {"accn": "0001327567-26-000005", "end": "2024-10-31", "filed": "2026-02-18", "form": "10-Q", "fp": "Q2", "frame": "CY2024Q3I", "fy": 2026, "val": 5912000000},
+            {"accn": "0001327567-25-000010", "end": "2025-01-31", "filed": "2025-02-14", "form": "10-Q", "fp": "Q2", "fy": 2025, "val": 6375300000},
+            {"accn": "0001327567-25-000017", "end": "2025-01-31", "filed": "2025-05-21", "form": "10-Q", "fp": "Q3", "fy": 2025, "val": 6375300000},
+            {"accn": "0001327567-26-000005", "end": "2025-01-31", "filed": "2026-02-18", "form": "10-Q", "fp": "Q2", "fy": 2026, "val": 6375000000},
+            {"accn": "0001327567-26-000015", "end": "2025-01-31", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2024Q4I", "fy": 2026, "val": 6375000000},
+            {"accn": "0001327567-25-000017", "end": "2025-04-30", "filed": "2025-05-21", "form": "10-Q", "fp": "Q3", "fy": 2025, "val": 7230500000},
+            {"accn": "0001327567-26-000015", "end": "2025-04-30", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2025Q1I", "fy": 2026, "val": 7230000000},
+            {"accn": "0001327567-25-000027", "end": "2025-07-31", "filed": "2025-08-29", "form": "10-K", "fp": "FY", "fy": 2025, "val": 7824400000},
+            {"accn": "0001327567-25-000035", "end": "2025-07-31", "filed": "2025-11-20", "form": "10-Q", "fp": "Q1", "fy": 2026, "val": 7824000000},
+            {"accn": "0001327567-26-000005", "end": "2025-07-31", "filed": "2026-02-18", "form": "10-Q", "fp": "Q2", "fy": 2026, "val": 7824000000},
+            {"accn": "0001327567-26-000015", "end": "2025-07-31", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "fy": 2026, "val": 7824000000},
+            {"accn": "0001327567-26-000023", "end": "2025-07-31", "filed": "2026-09-10", "form": "10-K", "fp": "FY", "frame": "CY2025Q2I", "fy": 2026, "val": 7824000000},
+            {"accn": "0001327567-25-000035", "end": "2025-10-31", "filed": "2025-11-20", "form": "10-Q", "fp": "Q1", "fy": 2026, "val": 8665000000},
+            {"accn": "0001327567-26-000005", "end": "2025-10-31", "filed": "2026-02-18", "form": "10-Q", "fp": "Q2", "frame": "CY2025Q3I", "fy": 2026, "val": 8665000000},
+            {"accn": "0001327567-26-000005", "end": "2026-01-31", "filed": "2026-02-18", "form": "10-Q", "fp": "Q2", "fy": 2026, "val": 9393000000},
+            {"accn": "0001327567-26-000015", "end": "2026-01-31", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2025Q4I", "fy": 2026, "val": 9393000000},
+            {"accn": "0001327567-26-000015", "end": "2026-04-30", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2026Q1I", "fy": 2026, "val": 27668000000},
+            {"accn": "0001327567-26-000023", "end": "2026-07-31", "filed": "2026-09-10", "form": "10-K", "fp": "FY", "frame": "CY2026Q2I", "fy": 2026, "val": 27492000000}
+          ]
+        }
+      },
+      "ConvertibleDebtNoncurrent": {
+        "units": {
+          "USD": [
+            {"accn": "0001327567-26-000015", "end": "2025-07-31", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "fy": 2026, "val": 0},
+            {"accn": "0001327567-26-000023", "end": "2025-07-31", "filed": "2026-09-10", "form": "10-K", "fp": "FY", "frame": "CY2025Q2I", "fy": 2026, "val": 0},
+            {"accn": "0001327567-26-000015", "end": "2026-04-30", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2026Q1I", "fy": 2026, "val": 1192000000},
+            {"accn": "0001327567-26-000023", "end": "2026-07-31", "filed": "2026-09-10", "form": "10-K", "fp": "FY", "frame": "CY2026Q2I", "fy": 2026, "val": 1774000000}
+          ]
+        }
+      },
+      "ConvertibleDebtCurrent": {
+        "units": {
+          "USD": [
+            {"accn": "0001327567-24-000040", "end": "2024-10-31", "filed": "2024-11-21", "form": "10-Q", "fp": "Q1", "frame": "CY2024Q3I", "fy": 2025, "val": 645800000},
+            {"accn": "0001327567-25-000010", "end": "2025-01-31", "filed": "2025-02-14", "form": "10-Q", "fp": "Q2", "frame": "CY2024Q4I", "fy": 2025, "val": 533800000},
+            {"accn": "0001327567-25-000017", "end": "2025-04-30", "filed": "2025-05-21", "form": "10-Q", "fp": "Q3", "frame": "CY2025Q1I", "fy": 2025, "val": 383200000},
+            {"accn": "0001327567-25-000027", "end": "2025-07-31", "filed": "2025-08-29", "form": "10-K", "fp": "FY", "fy": 2025, "val": 0},
+            {"accn": "0001327567-26-000015", "end": "2025-07-31", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2025Q2I", "fy": 2026, "val": 0},
+            {"accn": "0001327567-26-000015", "end": "2026-04-30", "filed": "2026-06-03", "form": "10-Q", "fp": "Q3", "frame": "CY2026Q1I", "fy": 2026, "val": 160000000}
+          ]
+        }
+      }
+    }
+  }
+}

@@ -138,3 +138,53 @@ def test_debt_falls_back_to_noncurrent_plus_current():
 def test_stale_data_warns():
     out = compute_fundamentals(_base(), today=TODAY + timedelta(days=400))
     assert any("over 200 days old" in w for w in out["warnings"])
+
+
+def test_panw_convertible_debt_resolves_real_debt_to_equity():
+    # Real SEC EDGAR equity/debt facts for PANW (CIK 0001327567), fetched live -- see
+    # tests/fixtures/panw_equity_debt_facts.json for provenance. PANW's old debt concept
+    # (LongTermDebt) goes stale after 2023-07-31; its debt is reported under
+    # ConvertibleDebtNoncurrent/ConvertibleDebtCurrent instead, which weren't in CONCEPTS
+    # before. Equity resolves cleanly on its own (gap_days=0 every quarter) -- this is a
+    # regression test for the debt side specifically, not the equity side.
+    import json
+    from pathlib import Path
+
+    real = json.loads((Path(__file__).parent / "fixtures" / "panw_equity_debt_facts.json").read_text())
+    real_concepts = real["facts"]["us-gaap"]
+
+    ends = [date(2024, 10, 31), date(2025, 1, 31), date(2025, 4, 30), date(2025, 7, 31),
+            date(2025, 10, 31), date(2026, 1, 31), date(2026, 4, 30), date(2026, 7, 31)]
+    starts = [date(2024, 8, 1), date(2024, 11, 1), date(2025, 2, 1), date(2025, 5, 1),
+              date(2025, 8, 1), date(2025, 11, 1), date(2026, 2, 1), date(2026, 5, 1)]
+    assert all(80 <= (e - s).days <= 100 for s, e in zip(starts, ends))
+
+    def flow_facts(value: float) -> list[dict]:
+        out = []
+        for s, e in zip(starts, ends):
+            out.append({"start": s.isoformat(), "end": e.isoformat(), "val": value,
+                        "form": "10-Q", "filed": (e + timedelta(days=30)).isoformat()})
+            value *= 1.02
+        return out
+
+    def instant_facts(value: float) -> list[dict]:
+        return [{"end": e.isoformat(), "val": value, "form": "10-Q",
+                 "filed": (e + timedelta(days=30)).isoformat()} for e in ends]
+
+    # Synthetic filler for the REQUIRED concepts this fix isn't about -- only equity/debt
+    # (from the real fixture) matter for what this test asserts.
+    companyfacts = {"facts": {"us-gaap": {
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": flow_facts(1_000_000_000.0)}},
+        "NetIncomeLoss": {"units": {"USD": flow_facts(150_000_000.0)}},
+        "AssetsCurrent": {"units": {"USD": instant_facts(5_000_000_000.0)}},
+        "LiabilitiesCurrent": {"units": {"USD": instant_facts(3_000_000_000.0)}},
+        **real_concepts,
+    }}}
+
+    result = compute_fundamentals(companyfacts, today=date(2026, 8, 20))
+    latest = result["latest"]
+    assert latest["period_end"] == "2026-07-31"
+    assert latest["debt_to_equity"] is not None
+    assert latest["debt_to_equity"] == pytest.approx(1_774_000_000 / 27_492_000_000, abs=1e-4)
+    assert result["concepts_used"]["debt_noncurrent"] == "ConvertibleDebtNoncurrent"
+    assert result["concepts_used"]["debt_current"] == "ConvertibleDebtCurrent"
