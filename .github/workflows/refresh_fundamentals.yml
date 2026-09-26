@@ -1,0 +1,40 @@
+name: Refresh fundamentals (single ticker)
+
+# Manual, targeted re-fetch of one company's fundamentals -- e.g. after fixing
+# a concept-lookup bug in fetch_fundamentals.py, to pull the corrected real
+# numbers in without waiting for that company's next filing to trigger the
+# normal event-driven update. Also rescores every company (fetch_fundamentals's
+# own CLI does this), so a score.py fix lands for everyone even though only
+# one company's fundamentals were re-fetched.
+on:
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: Ticker to refresh
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-writes
+  cancel-in-progress: false
+
+env:
+  EDGAR_USER_AGENT: ${{ secrets.EDGAR_USER_AGENT }}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Refresh fundamentals and rescore all
+        run: python -m screener.fetch_fundamentals "${{ inputs.ticker }}"
+      - name: Commit data
+        run: bash .github/scripts/commit-data.sh "Refresh ${{ inputs.ticker }} fundamentals; rescore all"
