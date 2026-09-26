@@ -55,11 +55,13 @@ CONCEPTS: dict[str, list[str]] = {
     "debt_noncurrent": [
         "LongTermDebtNoncurrent",
         "LongTermDebtAndCapitalLeaseObligations",
+        "ConvertibleDebtNoncurrent",  # e.g. PANW: switched off LongTermDebt entirely for convertible notes
     ],
     "debt_current": [
         "LongTermDebtCurrent",
         "DebtCurrent",
         "LongTermDebtAndCapitalLeaseObligationsCurrent",
+        "ConvertibleDebtCurrent",
     ],
 }
 
