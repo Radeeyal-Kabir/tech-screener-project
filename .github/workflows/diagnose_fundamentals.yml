@@ -79,4 +79,21 @@ jobs:
           report("debt_total")
           report("debt_noncurrent")
           report("debt_current")
+
+          # None of our candidate debt concepts have data past 2023-07-31 for this filer --
+          # it must be tagging debt under some other concept post-2023. List every us-gaap
+          # concept whose name mentions debt/notes, with its most recent instant "end" date,
+          # to find what it actually switched to.
+          usgaap = facts.get("facts", {}).get("us-gaap", {})
+          print("\nAll debt/notes-like concepts and their latest instant 'end' date:")
+          hits = []
+          for name, node in usgaap.items():
+              if not any(k in name for k in ("Debt", "Notes", "Loan", "Borrowing")):
+                  continue
+              usd = node.get("units", {}).get("USD", [])
+              ends = [f["end"] for f in usd if "start" not in f]  # instant facts only
+              if ends:
+                  hits.append((max(ends), name, len(usd)))
+          for end, name, n in sorted(hits, reverse=True)[:25]:
+              print(f"  latest_end={end}  concept={name}  n_facts={n}")
           PY
