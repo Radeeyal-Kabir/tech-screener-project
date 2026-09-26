@@ -54,9 +54,15 @@ jobs:
               "LongTermDebtCurrent",
           ]
           out = {c: usgaap[c] for c in concepts if c in usgaap}
+          payload = {"ticker": ticker, "cik": cik, "facts": out}
           with open("diagnostic.json", "w") as f:
-              json.dump({"ticker": ticker, "cik": cik, "facts": out}, f, indent=2)
+              json.dump(payload, f, indent=2)
           print(f"Concepts found for {ticker}: {list(out)}")
+          # Artifact downloads go through blob storage some callers can't reach;
+          # also print it so it's readable straight from the job log.
+          print("::group::diagnostic.json")
+          print(json.dumps(payload, indent=2))
+          print("::endgroup::")
           PY
       - uses: actions/upload-artifact@v4
         with:
