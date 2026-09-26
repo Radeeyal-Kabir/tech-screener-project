@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -150,6 +151,20 @@ def archive_url(cik10: str, accession: str, filename: str = "") -> str:
 def filing_documents(cik10: str, accession: str) -> list[str]:
     index = get_json(archive_url(cik10, accession, "index.json"))
     return [item["name"] for item in index.get("directory", {}).get("item", [])]
+
+
+def filing_document_types(cik10: str, accession: str) -> dict[str, str]:
+    """{filename: document type} from the filing's -index.html, e.g.
+    {"ibm-20251231_d2.htm": "EX-13"}. index.json has no type column, and a
+    document's filename doesn't have to say what exhibit it is."""
+    html = get_text(archive_url(cik10, accession, f"{accession}-index.html"))
+    types = {}
+    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S | re.I):
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S | re.I)
+        link = re.search(r'href="[^"]*/([^"/]+)"', row)
+        if len(cells) >= 4 and link:
+            types[link.group(1)] = re.sub(r"<[^>]+>|&nbsp;", "", cells[3]).strip().upper()
+    return types
 
 
 def get_companyfacts(cik10: str) -> dict:

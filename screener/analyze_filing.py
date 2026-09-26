@@ -7,17 +7,25 @@ Usage:
 Steps:
   1. Fetch the filing's primary HTML document and flatten it to text.
   2. Locate MD&A (10-K Item 7 / 10-Q Item 2). Headings also appear in the
-     table of contents, so the longest heading-to-next-item span wins. If
+     table of contents, so the longest heading-to-next-item span wins; only
+     headings that start a line count, not cross-references in prose. If
      that span is only a stub incorporating MD&A by reference (IBM does
-     this), follow it to the annual report exhibit (EX-13).
+     this), follow it to the annual report exhibit (EX-13), found by its
+     document type in the filing index.
   3. Select what to send to the model. A free GitHub Actions runner is
      CPU-only, so instead of the whole MD&A (often 50-100k characters) we
      keep the opening overview plus the paragraphs densest in tone/risk
      language, up to MAX_CHARS_ANALYZED, split into CHUNK_CHARS chunks.
+     Safe-harbor legal boilerplate is never selected.
   4. Ask a small local model (via Ollama) for tone + red flags per chunk,
      with a JSON schema constraining the answer. Red flags must use a fixed
      category list (so persistence across quarters can be matched) and cite
      a verbatim quote; flags whose quote isn't in the text are dropped.
+     The model also labels each flag's kind; only reported problems and
+     lowered outlooks are kept, not hypothetical risks or disclaimers.
+     Flags whose own summary negates them ("No guidance cut mentioned") or
+     whose quote is boilerplate are dropped too: boilerplate recurs verbatim
+     every quarter and would read as a persistent company-specific problem.
   5. Combine chunk results into one record per filing.
 
 Section-extraction problems are recorded on the filing (status
@@ -40,8 +48,13 @@ from screener.universe import by_ticker
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
-OLLAMA_OPTIONS = {"temperature": 0, "seed": 42, "num_ctx": 4096}
+# num_predict: a small model can get stuck repeating one array item (IBM's 2025
+# annual report did, until the 900s timeout aborted the run). A normal answer
+# is 150-600 tokens; at ~5 tokens/s on CPU this cap ends well inside the timeout,
+# and the truncated JSON is recorded as llm_failed instead of aborting the run.
+OLLAMA_OPTIONS = {"temperature": 0, "seed": 42, "num_ctx": 4096, "num_predict": 1536}
 OLLAMA_TIMEOUT = 900  # seconds per chunk; CPU inference is slow
+MAX_FLAGS_PER_CHUNK = 8  # enforced by the JSON schema's grammar, which is what actually stops a repetition loop
 
 PERIODIC_FORMS = ("10-K", "10-Q")
 FILINGS_KEPT = 8
@@ -81,6 +94,33 @@ SIGNAL_WORDS = re.compile(
     re.IGNORECASE,
 )
 
+# Legal boilerplate that recurs near-verbatim every filing, so it's never
+# evidence of a company-specific problem this period. Safe-harbor paragraphs
+# aren't sent to the model at all; a pointer to the Risk Factors section can
+# end an otherwise informative paragraph, so it only disqualifies a quote.
+SAFE_HARBOR = re.compile(
+    r"forward[\s-]looking\s+statements?|safe\s+harbor|private\s+securities\s+litigation\s+reform"
+    r"|(undertakes?|assumes?)\s+no\s+(obligation|duty)|no\s+obligation\s+to\s+(publicly\s+)?(update|revise)",
+    re.IGNORECASE,
+)
+BOILERPLATE_QUOTE = re.compile(
+    rf"{SAFE_HARBOR.pattern}"
+    r"|(see|refer\s+to|discussed\s+(in|under)|described\s+(in|under)|set\s+forth\s+in|provided\s+in|included\s+in"
+    r"|section\s+titled)\W+(part\s+i+\W+)?(item\s+1a\W+)?\W*risk\s+factors",
+    re.IGNORECASE,
+)
+
+# A summary saying the category doesn't apply: "No guidance cut mentioned",
+# "No specific red flags mentioned in this excerpt", "...but no details on
+# impact". "No assurance that..." is a real (if soft) flag, so it's exempt.
+NEGATED_SUMMARY = re.compile(
+    r"^\W*(no|none|nothing|not)\b(?!\s+(assurance|guarantee))"
+    r"|\bno\s+(specific|explicit|significant|material|details?|mention|evidence|indication|impact)\b"
+    r"|\bnot\s+(specifically\s+|explicitly\s+)?(mentioned|stated|disclosed|discussed|identified|indicated|specified)\b"
+    r"|\b(isn't|is\s+not|are\s+not|aren't)\s+(mentioned|a\s+red\s+flag|a\s+concern)\b",
+    re.IGNORECASE,
+)
+
 _SEP = r"[\s\.:\-–—|]*"
 _MDA = r"management\W{0,3}s?\s+discussion"
 SECTION_PATTERNS = {
@@ -89,10 +129,18 @@ SECTION_PATTERNS = {
     # Annual-report exhibits (EX-13) have no Item numbers.
     "EX-13": (
         _MDA,
-        r"report\s+of\s+independent\s+registered\s+public\s+accounting\s+firm"
+        r"report\s+of\s+management\b|report\s+of\s+independent\s+registered\s+public\s+accounting\s+firm"
         r"|consolidated\s+(income\s+)?statements?\s+of\s+(earnings|income|operations)",
     ),
 }
+
+# Headings start a line of the flattened text (a heading split across table
+# cells is joined onto one line). Cross-references in running prose -- 'see
+# "Part II, Item 8. Financial Statements..."' -- don't, and must neither open
+# nor close the section: QCOM's 10-Qs quote "Part I, Item 2. Management's
+# Discussion..." inside Risk Factors, and that span (Risk Factors through the
+# signatures) used to win as the longest.
+_HEADING = r"^[ \t]*(?:part\s+i{{1,2}}\W{{0,5}})?(?:{})"
 
 
 class QualitativeError(RuntimeError):
@@ -157,21 +205,37 @@ def html_to_text(html: str) -> str:
 
 
 def find_section(text: str, kind: str) -> str:
-    start_pat, end_pat = SECTION_PATTERNS[kind]
-    starts = [m.start() for m in re.finditer(start_pat, text, re.IGNORECASE)]
+    start_pat, end_pat = (_HEADING.format(p) for p in SECTION_PATTERNS[kind])
+    flags = re.IGNORECASE | re.MULTILINE
+    starts = [m.start() for m in re.finditer(start_pat, text, flags)]
     if not starts:
         raise ExtractionError(f"No MD&A heading found ({kind})")
-    ends = [m.start() for m in re.finditer(end_pat, text, re.IGNORECASE)]
-    best = ""
+    ends = [m.start() for m in re.finditer(end_pat, text, flags)]
+    best, best_closed = "", False
     for s in starts:
-        e = next((e for e in ends if e > s + 50), min(len(text), s + 250_000))
-        if e - s > len(best):
-            best = text[s:e]
+        e = next((e for e in ends if e > s + 50), None)
+        closed = e is not None
+        span = text[s:e if closed else min(len(text), s + 250_000)]
+        # A span that reaches its closing heading beats one that runs off the end of the document.
+        if (closed, len(span)) > (best_closed, len(best)):
+            best, best_closed = span, closed
     return best.strip()
 
 
 def _incorporated_by_reference(section: str) -> bool:
     return len(section) < MIN_SECTION_CHARS and re.search(r"incorporated\W+(herein\W+)?by\W+reference", section, re.I) is not None
+
+
+def _annual_report_exhibit(cik10: str, accession: str) -> str | None:
+    """Filename of the filing's EX-13 (annual report to shareholders), if any."""
+    html_docs = [n for n in edgar_client.filing_documents(cik10, accession) if n.lower().endswith((".htm", ".html"))]
+    by_name = [n for n in html_docs if re.search(r"ex-?13", n, re.I)]
+    if by_name:
+        return by_name[0]
+    # The filename needn't say so (IBM's EX-13 is "ibm-20251231_d2.htm"); the
+    # filing index's document type does.
+    types = edgar_client.filing_document_types(cik10, accession)
+    return next((n for n in html_docs if re.fullmatch(r"EX-13(\.\d+)?", types.get(n, ""))), None)
 
 
 def extract_mda(cik10: str, filing: dict) -> tuple[str, str]:
@@ -182,11 +246,10 @@ def extract_mda(cik10: str, filing: dict) -> tuple[str, str]:
     section = find_section(text, kind)
 
     if _incorporated_by_reference(section):
-        exhibits = [n for n in edgar_client.filing_documents(cik10, filing["accession"])
-                    if re.search(r"ex-?13", n, re.I) and n.lower().endswith((".htm", ".html"))]
-        if not exhibits:
+        exhibit = _annual_report_exhibit(cik10, filing["accession"])
+        if not exhibit:
             raise ExtractionError("MD&A incorporated by reference, but no EX-13 exhibit found")
-        url = edgar_client.archive_url(cik10, filing["accession"], exhibits[0])
+        url = edgar_client.archive_url(cik10, filing["accession"], exhibit)
         section = find_section(html_to_text(edgar_client.get_text(url)), "EX-13")
 
     if len(section) < MIN_SECTION_CHARS:
@@ -203,8 +266,8 @@ def _prose_paragraphs(section: str) -> list[str]:
     for p in re.split(r"\n+", section):
         p = p.strip()
         letters = sum(ch.isalpha() for ch in p)
-        # Drop table rows, page numbers and short headings.
-        if len(p) >= 80 and letters / len(p) >= 0.6:
+        # Drop table rows, page numbers, short headings and safe-harbor boilerplate.
+        if len(p) >= 80 and letters / len(p) >= 0.6 and not SAFE_HARBOR.search(p):
             paras.append(p)
     return paras
 
@@ -248,6 +311,12 @@ def chunk(paragraphs: list[str], size: int = CHUNK_CHARS) -> list[str]:
 # --------------------------------------------------------------------------
 # The model
 
+# The model labels what each flag's quote is; only these kinds are kept.
+# Asking a small model to classify the quote it just copied works far better
+# than asking it to silently "skip boilerplate".
+FLAG_KINDS = ["reported_problem", "lowered_outlook", "possible_risk", "disclaimer"]
+KEPT_FLAG_KINDS = {"reported_problem", "lowered_outlook"}
+
 RESPONSE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -255,14 +324,17 @@ RESPONSE_SCHEMA = {
         "reason": {"type": "string"},
         "red_flags": {
             "type": "array",
+            "maxItems": MAX_FLAGS_PER_CHUNK,
             "items": {
                 "type": "object",
+                # Quote first, so the kind, category and summary are about the text actually cited.
                 "properties": {
+                    "quote": {"type": "string"},
+                    "kind": {"type": "string", "enum": FLAG_KINDS},
                     "category": {"type": "string", "enum": RED_FLAG_CATEGORIES},
                     "summary": {"type": "string"},
-                    "quote": {"type": "string"},
                 },
-                "required": ["category", "summary", "quote"],
+                "required": ["quote", "kind", "category", "summary"],
             },
         },
     },
@@ -279,7 +351,17 @@ PROMPT_TEMPLATE = """Company: {name} ({ticker}). Filing: {form} for the period e
 Read this MD&A excerpt and return:
 - "tone": management's overall tone about the business: "bullish" (confident, strong demand, improving results), "neutral" (balanced or purely factual), or "bearish" (cautious, weakening results, headwinds dominate).
 - "reason": one sentence explaining the tone.
-- "red_flags": specific problems management discloses about THIS company's business now. Skip generic boilerplate that any company could write. For each: "category" (one of: {categories}), "summary" (at most 20 words), and "quote": 5-25 words copied exactly, word for word, from the excerpt. Use an empty list if there are none.
+- "red_flags": problems management reports about THIS company in THIS period: a result that got worse (e.g. revenue or margin declined), something that happened (e.g. a charge, layoffs, a lost customer, a new restriction hitting sales), or an outlook management lowered. Use an empty list if there are none.
+  Do NOT include:
+  * legal disclaimers: forward-looking-statement warnings, "we undertake no obligation to update", pointers to the Risk Factors section;
+  * risks that could or may happen (economic conditions, exchange rates, trade policy, competition, regulation) unless the excerpt says they are hurting results now;
+  * good or neutral facts: cash is sufficient, no borrowings, no impact expected, plans to buy back shares;
+  * a category that does not apply. Never write a red flag whose summary says something is "not mentioned".
+  For each red flag:
+  * "quote": 5-25 words copied exactly, word for word, from the excerpt;
+  * "kind": "reported_problem" (something bad that happened this period), "lowered_outlook" (management expects worse results ahead), "possible_risk" (something that could or may happen), or "disclaimer" (legal boilerplate);
+  * "category": one of: {categories};
+  * "summary": at most 20 words stating the problem.
 
 Excerpt:
 \"\"\"
@@ -336,19 +418,29 @@ def analyze_chunk(text: str, context: dict) -> dict | None:
             continue
         if data.get("tone") not in TONE_VALUES:
             continue
-        flags, dropped = [], 0
+        flags, dropped, not_flags = [], 0, 0
         for rf in data.get("red_flags") or []:
             if not isinstance(rf, dict):
                 continue
-            if quote_in_text(str(rf.get("quote", "")), text):
-                category = rf.get("category") if rf.get("category") in RED_FLAG_CATEGORIES else "other"
-                flags.append({"category": category, "summary": str(rf.get("summary", ""))[:200],
-                              "quote": str(rf["quote"])[:300]})
-            else:
+            quote, summary = str(rf.get("quote", "")), str(rf.get("summary", ""))
+            if not quote_in_text(quote, text):
                 dropped += 1
+            elif not is_red_flag(rf.get("kind"), summary, quote):
+                not_flags += 1
+            else:
+                category = rf.get("category") if rf.get("category") in RED_FLAG_CATEGORIES else "other"
+                flags.append({"category": category, "summary": summary[:200], "quote": quote[:300]})
         return {"tone": data["tone"], "reason": str(data.get("reason", ""))[:300],
-                "red_flags": flags, "dropped": dropped, "chars": len(text)}
+                "red_flags": flags, "dropped": dropped, "not_flags": not_flags, "chars": len(text)}
     return None
+
+
+def is_red_flag(kind, summary: str, quote: str) -> bool:
+    """False for what the model itself labels a hypothetical risk or disclaimer, for flags whose
+    own summary says they don't apply, and for boilerplate quotes, whatever the model called them."""
+    if kind is not None and kind not in KEPT_FLAG_KINDS:
+        return False
+    return not NEGATED_SUMMARY.search(summary) and not BOILERPLATE_QUOTE.search(quote)
 
 
 def combine(chunk_results: list[dict]) -> dict:
@@ -367,6 +459,7 @@ def combine(chunk_results: list[dict]) -> dict:
         "tone_rationale": reason,
         "red_flags": [flags[c] for c in sorted(flags)],
         "unverified_flags_dropped": sum(r["dropped"] for r in chunk_results),
+        "non_flags_dropped": sum(r.get("not_flags", 0) for r in chunk_results),
     }
 
 
